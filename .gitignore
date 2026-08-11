@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# Env
+.env
+
+# Node
+node_modules/
+dist/
+tsconfig.tsbuildinfo
+
+# DB
+*.db
+backups/
+
+# OS
+.DS_Store
