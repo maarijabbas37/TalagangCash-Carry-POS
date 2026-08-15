@@ -1,14 +1,14 @@
 """
 Product master endpoints.
 
-Per spec section 4 permission table, Employee has "Add Product: Limited"
-and "Change Sale Price: ❌". Phase 1 interpretation (documented, not
-silently assumed): employees can CREATE new products (they receive
-purchases and need to add unlisted items on the spot, per section 17's
-workflow) but cannot change the price of an EXISTING product via this
-endpoint — that requires the dedicated /price endpoint, which is
-owner-only. If the store's actual practice differs, this is the seam to
-adjust.
+Phase 1 fix (was previously a gap flagged in audit): general product
+edits — including is_active — are now Owner-only. Employees can still
+CREATE new products (per spec section 17's purchase-receiving workflow;
+"Add Product: Employee Limited" in the permission table), but cannot
+alter an existing product's identity, barcode, internal code, or active
+status. Every create/edit/price-change writes an AuditLog entry (see
+app/services/product_service.py) — this endpoint being restricted only
+matters if the restriction is also reviewable.
 """
 import uuid
 
@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_db, require_owner
 from app.models.product import Product
 from app.models.user import User
-from app.schemas.product import PriceUpdate, ProductCreate, ProductOut, ProductUpdate
+from app.schemas.product import PriceHistoryOut, PriceUpdate, ProductCreate, ProductOut, ProductUpdate
 from app.services.product_service import change_product_price, create_product, update_product
 
 router = APIRouter(prefix="/api/products", tags=["products"])
@@ -62,9 +62,10 @@ def get_product(
 
 @router.post("", response_model=ProductOut, status_code=status.HTTP_201_CREATED)
 def add_product(
-    data: ProductCreate, db: Session = Depends(get_db), _user: User = Depends(get_current_user)
+    data: ProductCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
 ) -> ProductOut:
-    return create_product(db, data)
+    """Any authenticated user (Owner or Employee) — see module docstring."""
+    return create_product(db, data, created_by=user)
 
 
 @router.put("/{product_id}", response_model=ProductOut)
@@ -72,10 +73,17 @@ def edit_product(
     product_id: uuid.UUID,
     data: ProductUpdate,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    owner: User = Depends(require_owner),
 ) -> ProductOut:
+    """
+    Owner-only (Phase 1 fix). Covers name/barcode/internal_code/unit/
+    reorder_level/is_active — all treated as "sensitive product
+    information" per the audit finding. Sale price is intentionally
+    excluded from this schema entirely; it only ever changes via the
+    dedicated /price endpoint below so a price-history row is guaranteed.
+    """
     product = _get_product_or_404(db, product_id)
-    return update_product(db, product, data)
+    return update_product(db, product, data, changed_by=owner)
 
 
 @router.put("/{product_id}/price", response_model=ProductOut)
@@ -90,7 +98,7 @@ def change_price(
     return change_product_price(db, product, data.new_price, changed_by=owner)
 
 
-@router.get("/{product_id}/price-history")
+@router.get("/{product_id}/price-history", response_model=list[PriceHistoryOut])
 def price_history(
     product_id: uuid.UUID, db: Session = Depends(get_db), _user: User = Depends(get_current_user)
 ):

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 import uuid
 
 from app.models.user import RoleName
@@ -14,8 +14,7 @@ class CounterOut(BaseModel):
     name: str
     code: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MeResponse(BaseModel):
@@ -25,8 +24,7 @@ class MeResponse(BaseModel):
     role: RoleName
     default_counter: CounterOut | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TokenResponse(BaseModel):

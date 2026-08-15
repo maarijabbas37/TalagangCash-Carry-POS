@@ -1,0 +1,153 @@
+"""
+Shared pytest fixtures.
+
+Each test gets its own fresh in-memory SQLite database (tables created
+from the real SQLAlchemy models via Base.metadata, same models Alembic
+migrates in production) — fast, fully isolated, no shared state between
+tests. This mirrors Postgres closely enough for auth/RBAC/validation
+logic; anything genuinely Postgres-specific (row locking, concurrency)
+is out of scope for Phase 1's test suite and will need real-Postgres
+integration tests once Phase 2 introduces concurrent stock writes.
+
+StaticPool + check_same_thread=False keeps the same in-memory DB alive
+across the multiple connections SQLAlchemy/FastAPI open during a test.
+"""
+import uuid
+
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+
+import app.db.base_class_imports  # noqa: F401 - registers all models on Base.metadata
+from app.api.deps import get_db
+from app.core.security import hash_password
+from app.db.base import Base
+from app.main import app
+from app.models.user import Counter, RoleName, User
+
+
+@pytest.fixture()
+def db_session():
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(bind=engine)
+    TestingSessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+    session = TestingSessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
+        Base.metadata.drop_all(bind=engine)
+        engine.dispose()
+
+
+@pytest.fixture()
+def client(db_session):
+    def _override_get_db():
+        # Deliberately does NOT close db_session here — it's shared across
+        # the whole test via the db_session fixture and closed by that
+        # fixture's teardown instead.
+        yield db_session
+
+    app.dependency_overrides[get_db] = _override_get_db
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture()
+def counter1(db_session):
+    counter = Counter(id=uuid.uuid4(), name="Counter 1", code="01")
+    db_session.add(counter)
+    db_session.commit()
+    db_session.refresh(counter)
+    return counter
+
+
+@pytest.fixture()
+def counter2(db_session):
+    counter = Counter(id=uuid.uuid4(), name="Counter 2", code="02")
+    db_session.add(counter)
+    db_session.commit()
+    db_session.refresh(counter)
+    return counter
+
+
+@pytest.fixture()
+def inactive_counter(db_session):
+    counter = Counter(id=uuid.uuid4(), name="Old Counter", code="99", is_active=False)
+    db_session.add(counter)
+    db_session.commit()
+    db_session.refresh(counter)
+    return counter
+
+
+@pytest.fixture()
+def owner_user(db_session, counter1):
+    user = User(
+        id=uuid.uuid4(),
+        username="abbu",
+        full_name="Abbu",
+        hashed_password=hash_password("ownerpass123"),
+        role=RoleName.OWNER,
+        default_counter_id=counter1.id,
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
+
+@pytest.fixture()
+def employee_user(db_session, counter2):
+    user = User(
+        id=uuid.uuid4(),
+        username="employee",
+        full_name="Employee",
+        hashed_password=hash_password("employeepass123"),
+        role=RoleName.EMPLOYEE,
+        default_counter_id=counter2.id,
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
+
+@pytest.fixture()
+def inactive_user(db_session, counter2):
+    user = User(
+        id=uuid.uuid4(),
+        username="old_employee",
+        full_name="Old Employee",
+        hashed_password=hash_password("password123"),
+        role=RoleName.EMPLOYEE,
+        default_counter_id=counter2.id,
+        is_active=False,
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
+
+def get_auth_headers(client: TestClient, username: str, password: str) -> dict[str, str]:
+    response = client.post("/api/auth/login", data={"username": username, "password": password})
+    assert response.status_code == 200, response.text
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture()
+def owner_headers(client, owner_user):
+    return get_auth_headers(client, "abbu", "ownerpass123")
+
+
+@pytest.fixture()
+def employee_headers(client, employee_user):
+    return get_auth_headers(client, "employee", "employeepass123")
