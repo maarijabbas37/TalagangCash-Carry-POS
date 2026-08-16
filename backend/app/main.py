@@ -1,13 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import auth, products, users, counters, audit
+from app.api.routes import auth, products, users, counters, audit, sales, inventory
 from app.core.config import settings
 
 app = FastAPI(
     title=f"{settings.STORE_NAME} POS API",
-    version="0.1.0",
-    description="Phase 1: authentication, roles, counters, product master.",
+    version="0.2.0",
+    description="Phase 1: auth, roles, counters, product master. Phase 2: POS sales, inventory ledger, payments.",
 )
 
 # Local-network LAN deployment (spec section 43) — POS clients on the same
@@ -26,6 +26,8 @@ app.include_router(users.router)
 app.include_router(products.router)
 app.include_router(counters.router)
 app.include_router(audit.router)
+app.include_router(sales.router)
+app.include_router(inventory.router)
 
 
 @app.get("/api/health")

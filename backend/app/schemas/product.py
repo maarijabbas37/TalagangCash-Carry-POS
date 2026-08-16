@@ -46,6 +46,7 @@ class ProductOut(BaseModel):
     unit: str
     sale_price: Decimal
     reorder_level: int
+    current_stock: Decimal
     is_active: bool
     created_at: datetime
     updated_at: datetime

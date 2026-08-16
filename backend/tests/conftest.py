@@ -49,10 +49,19 @@ def db_session():
 @pytest.fixture()
 def client(db_session):
     def _override_get_db():
-        # Deliberately does NOT close db_session here — it's shared across
-        # the whole test via the db_session fixture and closed by that
-        # fixture's teardown instead.
-        yield db_session
+        # Mirrors production's get_db(): production closes the session in
+        # a `finally` after every request, which implicitly rolls back any
+        # uncommitted work if a route raised mid-transaction. Here we keep
+        # the session OPEN across the whole test (fixtures share it), but
+        # still roll back on exception — otherwise a failed request's
+        # flushed-but-uncommitted rows would remain visible to later
+        # queries on this same session, which is not how production
+        # behaves and would make atomicity tests give false negatives.
+        try:
+            yield db_session
+        except Exception:
+            db_session.rollback()
+            raise
 
     app.dependency_overrides[get_db] = _override_get_db
     with TestClient(app) as test_client:
@@ -151,3 +160,38 @@ def owner_headers(client, owner_user):
 @pytest.fixture()
 def employee_headers(client, employee_user):
     return get_auth_headers(client, "employee", "employeepass123")
+
+
+@pytest.fixture()
+def product_with_stock(db_session, owner_user):
+    """A product with 10 units of stock, via a real OPENING_STOCK movement
+    (not a raw field write) so the ledger and current_stock start in sync."""
+    from decimal import Decimal
+
+    from app.models.inventory import InventoryMovement, MovementType
+    from app.models.product import Product
+
+    product = Product(
+        id=uuid.uuid4(),
+        name="Surf Excel 90g",
+        barcode="123456789",
+        unit="pcs",
+        sale_price=Decimal("110.00"),
+        reorder_level=15,
+        current_stock=Decimal("10"),
+    )
+    db_session.add(product)
+    db_session.flush()
+    db_session.add(
+        InventoryMovement(
+            id=uuid.uuid4(),
+            product_id=product.id,
+            quantity=Decimal("10"),
+            movement_type=MovementType.OPENING_STOCK,
+            reference_type="opening_stock",
+            user_id=owner_user.id,
+        )
+    )
+    db_session.commit()
+    db_session.refresh(product)
+    return product

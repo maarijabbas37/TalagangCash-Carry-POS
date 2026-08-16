@@ -17,6 +17,11 @@ depends_on = None
 def upgrade() -> None:
     role_name_enum = postgresql.ENUM("OWNER", "EMPLOYEE", name="role_name")
     role_name_enum.create(op.get_bind(), checkfirst=True)
+    # Without this, CREATE TABLE below re-issues CREATE TYPE for this same
+    # enum (SQLAlchemy's default "create on table create" behavior),
+    # colliding with the explicit create() above. Caught the first time
+    # this migration actually ran against real Postgres (Phase 2 review).
+    role_name_enum.create_type = False
 
     op.create_table(
         "counters",
