@@ -15,7 +15,10 @@ Design notes (deliberate decisions, documented per spec section 72):
   that touches every table that references "counter name".
 - User.default_counter_id is nullable: a login doesn't have to be pinned to
   a counter at the account level if the store ever wants a user to float
-  between counters, though today Abbu = Counter 1, Employee = Counter 2.
+  between counters. Nothing in this schema or the code that reads it
+  assumes any specific person is tied to any specific counter — which
+  user is assigned to which counter is pure data (User.default_counter_id),
+  never a hardcoded default anywhere in application logic.
 """
 import enum
 import uuid

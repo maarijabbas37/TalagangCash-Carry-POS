@@ -31,9 +31,16 @@ class Settings(BaseSettings):
     # App
     ENVIRONMENT: str = "development"
 
-    # Seed (Phase 1 bootstrap only)
-    SEED_ADMIN_USERNAME: str = "abbu"
+    # Seed (Phase 1 bootstrap only — actually read via os.getenv() in
+    # seed.py, not through this settings object; kept here only for
+    # documentation/discoverability of what seed.py accepts). Defaults
+    # intentionally reference no specific person's name.
+    SEED_ADMIN_USERNAME: str = "owner"
     SEED_ADMIN_PASSWORD: str = "change_me_immediately"
+    SEED_ADMIN_FULL_NAME: str = "owner"
+    SEED_EMPLOYEE_USERNAME: str = "employee"
+    SEED_EMPLOYEE_PASSWORD: str = "change_me_too"
+    SEED_EMPLOYEE_FULL_NAME: str = "employee"
 
 
 @lru_cache

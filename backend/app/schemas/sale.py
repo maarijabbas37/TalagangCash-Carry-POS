@@ -57,6 +57,7 @@ class SaleOut(BaseModel):
     bill_number: int
     counter_id: uuid.UUID
     cashier_id: uuid.UUID
+    cashier_name: str
     subtotal: Decimal
     discount_amount: Decimal
     discount_user_id: uuid.UUID | None

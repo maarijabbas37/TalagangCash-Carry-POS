@@ -69,6 +69,18 @@ class Sale(Base, TimestampMixin):
     items: Mapped[list["SaleItem"]] = relationship("SaleItem", back_populates="sale", order_by="SaleItem.id")
     payments: Mapped[list["Payment"]] = relationship("Payment", back_populates="sale", order_by="Payment.created_at")  # noqa: F821
 
+    @property
+    def cashier_name(self) -> str:
+        """
+        Read-only convenience for API responses (SaleOut). Deliberately
+        just the name — not exposing the full User object (username,
+        role, etc.) through the sales API, which nobody consuming a
+        receipt needs. Relies on the `cashier` relationship already being
+        loadable within the request-scoped session; no new query pattern
+        introduced, no change to how a Sale is created or written.
+        """
+        return self.cashier.full_name
+
     def __repr__(self) -> str:
         return f"<Sale #{self.bill_number} total={self.net_total}>"
 
