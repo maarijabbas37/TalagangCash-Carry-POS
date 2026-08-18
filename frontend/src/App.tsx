@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { MainLayout } from "./layouts/MainLayout";
-import { Dashboard } from "./pages/Dashboard/Dashboard";
+import { POS } from "./pages/POS/POS";
+import { SalesHistory } from "./pages/SalesHistory/SalesHistory";
 import { Login } from "./pages/Login/Login";
 import { Products } from "./pages/Products/Products";
 import { AuthProvider } from "./hooks/useAuth";
@@ -19,7 +20,8 @@ export default function App() {
 
             <Route element={<ProtectedRoute />}>
               <Route element={<MainLayout />}>
-                <Route path="/" element={<Dashboard />} />
+                <Route path="/" element={<POS />} />
+                <Route path="/sales-history" element={<SalesHistory />} />
                 <Route path="/products" element={<Products />} />
               </Route>
             </Route>

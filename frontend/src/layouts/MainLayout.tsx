@@ -9,10 +9,9 @@ interface NavItem {
 }
 
 // Section 2 of the blueprint: employees never see modules they don't need.
-// Phase 1 only wires up POS (placeholder) and Products; the rest of the
-// nav is scaffolded here so later phases just add routes, not this shell.
 const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "POS", icon: "🧾" },
+  { to: "/sales-history", label: "Sales History", icon: "🧾" },
   { to: "/products", label: "Products", icon: "📦" },
   { to: "/users", label: "Users", icon: "👥", ownerOnly: true },
 ];
