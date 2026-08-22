@@ -208,10 +208,23 @@ export function POS() {
 
   return (
     <div className="p-6 flex flex-col h-full gap-4">
-      <div className="flex items-center justify-between border-b border-gray-200 pb-3">
-        <h1 className="text-lg font-semibold">POS</h1>
-        <div className="text-sm text-gray-500">
-          {user?.default_counter?.name ?? "No counter assigned"} · {user?.full_name}
+      <div className="flex items-center justify-between border-b border-gray-200 pb-4">
+        <div className="flex items-center gap-3">
+          <img src="/logo.png" alt="" className="w-12 h-12 object-contain shrink-0" />
+          <div className="leading-none">
+            <div className="font-extrabold text-2xl text-brand-700 tracking-tight">TALAGANG</div>
+            <div className="text-xs font-semibold text-gold-600 tracking-[0.2em] uppercase mt-1">
+              Cash &amp; Carry — Point of Sale
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="px-3 py-1.5 rounded-full bg-brand-50 text-brand-700 text-sm font-medium">
+            {user?.default_counter?.name ?? "No counter assigned"}
+          </span>
+          <span className="px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 text-sm font-medium">
+            {user?.full_name}
+          </span>
         </div>
       </div>
 

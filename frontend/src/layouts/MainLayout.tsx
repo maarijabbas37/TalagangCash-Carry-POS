@@ -24,8 +24,18 @@ export function MainLayout() {
   return (
     <div className="min-h-screen flex bg-gray-50">
       <aside className="w-56 bg-white border-r border-gray-200 flex flex-col">
-        <div className="px-4 py-5 border-b border-gray-200">
-          <h1 className="font-bold text-sm leading-tight">TALAGANG CASH &amp; CARRY</h1>
+        <div className="px-4 py-5 border-b border-gray-200 flex items-center gap-3">
+          <img
+            src="/logo.png"
+            alt="Talagang Cash & Carry"
+            className="w-11 h-11 object-contain shrink-0"
+          />
+          <div className="leading-tight">
+            <div className="font-extrabold text-base text-brand-700 tracking-tight">TALAGANG</div>
+            <div className="text-[10px] font-semibold text-gold-600 tracking-[0.18em] uppercase">
+              Cash &amp; Carry
+            </div>
+          </div>
         </div>
         <nav className="flex-1 py-2">
           {visibleItems.map((item) => (
