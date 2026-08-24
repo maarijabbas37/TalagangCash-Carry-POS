@@ -10,3 +10,5 @@ from app.models.audit import AuditLog  # noqa: F401
 from app.models.inventory import InventoryMovement  # noqa: F401
 from app.models.sale import Sale, SaleItem, BillSequence  # noqa: F401
 from app.models.payment import Payment  # noqa: F401
+from app.models.supplier import Supplier  # noqa: F401
+from app.models.purchase import Purchase, PurchaseItem, PurchasePayment  # noqa: F401

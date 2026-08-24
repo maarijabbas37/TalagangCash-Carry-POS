@@ -30,6 +30,7 @@ class ProductUpdate(BaseModel):
     unit: str | None = None
     reorder_level: int | None = Field(default=None, ge=0)
     is_active: bool | None = None
+    preferred_supplier_id: uuid.UUID | None = None
     # sale_price is intentionally NOT editable here — changing price goes
     # through PriceUpdate below so a history row is always created (spec 14).
 
@@ -47,6 +48,8 @@ class ProductOut(BaseModel):
     sale_price: Decimal
     reorder_level: int
     current_stock: Decimal
+    last_purchase_cost: Decimal | None
+    preferred_supplier_id: uuid.UUID | None
     is_active: bool
     created_at: datetime
     updated_at: datetime

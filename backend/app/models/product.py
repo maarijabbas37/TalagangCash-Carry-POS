@@ -33,6 +33,18 @@ Phase 2 addition — current_stock:
   itself rejects the UPDATE. This is the amendment-6 requirement ("must
   not allow ... a future application bug to create negative stock") — row
   locking prevents races, but only a constraint prevents a logic error.
+Phase 3 additions — last_purchase_cost, preferred_supplier_id:
+- last_purchase_cost is a nullable fast-read cache, exact same pattern as
+  current_stock: informational only, synchronized inside purchase_service
+  when a purchase is received, never authoritative. The authoritative
+  cost record is the purchase_items ledger (one row per batch, doubling
+  as a FIFO cost layer for a future profit-reporting phase).
+- preferred_supplier_id is a nullable hint, not a constraint — a product
+  may genuinely have multiple suppliers over time. It is only ever SET
+  when currently null (first purchase received "claims" it); it is never
+  silently overwritten by a later purchase from a different supplier.
+  Changing it deliberately is a normal owner-only product edit, same as
+  any other field.
 """
 import uuid
 
@@ -56,6 +68,12 @@ class Product(Base, TimestampMixin):
     reorder_level: Mapped[int] = mapped_column(default=15, nullable=False)
     current_stock: Mapped[float] = mapped_column(Numeric(12, 3), nullable=False, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    last_purchase_cost: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
+    preferred_supplier_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("suppliers.id"), nullable=True
+    )
+    preferred_supplier: Mapped["Supplier | None"] = relationship("Supplier")  # noqa: F821
 
     price_history: Mapped[list["ProductPriceHistory"]] = relationship(
         "ProductPriceHistory", back_populates="product", order_by="ProductPriceHistory.created_at.desc()"
