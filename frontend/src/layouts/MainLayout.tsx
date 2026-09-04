@@ -8,11 +8,12 @@ interface NavItem {
   ownerOnly?: boolean;
 }
 
-// Section 2 of the blueprint: employees never see modules they don't need.
 const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "POS", icon: "🧾" },
   { to: "/sales-history", label: "Sales History", icon: "🧾" },
   { to: "/products", label: "Products", icon: "📦" },
+  { to: "/suppliers", label: "Suppliers", icon: "🚚" },
+  { to: "/purchases", label: "Purchases", icon: "📥" },
   { to: "/users", label: "Users", icon: "👥", ownerOnly: true },
 ];
 

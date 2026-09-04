@@ -23,6 +23,8 @@ export interface Product {
   sale_price: string;
   reorder_level: number;
   current_stock: string;
+  last_purchase_cost: string | null;
+  preferred_supplier_id: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -49,10 +51,6 @@ export interface SaleCreatePayload {
   payment_method: PaymentMethod;
   amount_received?: string | null;
   payment_reference?: string | null;
-  // counter_id is intentionally never sent from the frontend — the
-  // backend defaults to the cashier's default_counter_id. Arbitrary
-  // counter selection from the client is not permitted (Phase 2 POS
-  // review amendment 3).
 }
 
 export interface SaleItemOut {
@@ -96,8 +94,80 @@ export interface SaleOut {
 export interface CartLine {
   product: Product;
   quantity: string;
-  /** sale_price captured when the product was added to the cart — used
-   * to detect a mismatch against the price the backend actually charges
-   * (see price-freshness check before checkout). */
   priceWhenAdded: string;
+}
+
+// --- Phase 3: Suppliers ---
+
+export interface Supplier {
+  id: string;
+  name: string;
+  phone: string | null;
+  address_notes: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface SupplierCreatePayload {
+  name: string;
+  phone?: string | null;
+  address_notes?: string | null;
+}
+
+// --- Phase 3: Purchases (stock receiving) ---
+
+export interface PurchaseItemIn {
+  product_id: string;
+  quantity: string;
+  unit_cost: string;
+}
+
+export interface PurchaseCreatePayload {
+  supplier_id: string;
+  items: PurchaseItemIn[];
+  invoice_number?: string | null;
+  invoice_date?: string | null;
+  invoice_total?: string | null;
+  notes?: string | null;
+  mismatch_acknowledged?: boolean;
+}
+
+export interface PurchaseItemOut {
+  id: string;
+  product_id: string;
+  product_name: string;
+  quantity: string;
+  unit_cost: string;
+  line_total: string;
+}
+
+export interface PurchasePaymentOut {
+  id: string;
+  amount: string;
+  user_id: string;
+  paid_at: string;
+  notes: string | null;
+}
+
+export interface PurchaseOut {
+  id: string;
+  supplier_id: string;
+  invoice_number: string | null;
+  invoice_date: string | null;
+  invoice_total: string | null;
+  computed_total: string;
+  mismatch_acknowledged: boolean;
+  received_by_user_id: string;
+  notes: string | null;
+  items: PurchaseItemOut[];
+  payments: PurchasePaymentOut[];
+  amount_paid: string;
+  outstanding: string;
+  created_at: string;
+}
+
+export interface PurchaseCartLine {
+  product: Product;
+  quantity: string;
+  unit_cost: string;
 }

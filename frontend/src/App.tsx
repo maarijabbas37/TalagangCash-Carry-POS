@@ -5,6 +5,9 @@ import { POS } from "./pages/POS/POS";
 import { SalesHistory } from "./pages/SalesHistory/SalesHistory";
 import { Login } from "./pages/Login/Login";
 import { Products } from "./pages/Products/Products";
+import { Suppliers } from "./pages/Suppliers/Suppliers";
+import { NewPurchase } from "./pages/Purchases/NewPurchase";
+import { PurchaseHistory } from "./pages/Purchases/PurchaseHistory";
 import { AuthProvider } from "./hooks/useAuth";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 
@@ -23,6 +26,9 @@ export default function App() {
                 <Route path="/" element={<POS />} />
                 <Route path="/sales-history" element={<SalesHistory />} />
                 <Route path="/products" element={<Products />} />
+                <Route path="/suppliers" element={<Suppliers />} />
+                <Route path="/purchases" element={<PurchaseHistory />} />
+                <Route path="/purchases/new" element={<NewPurchase />} />
               </Route>
             </Route>
 
